@@ -1,0 +1,214 @@
+version: '3.9'
+
+services:
+
+  # ----------------------------------------
+  # PostgreSQL Database
+  # ----------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: dfa_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: douyin_fashion_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------
+  # Redis (Queue + Cache)
+  # ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: dfa_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------
+  # API Gateway (FastAPI)
+  # ----------------------------------------
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: dfa_api_gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/douyin_fashion_ai
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=development
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/api-gateway:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ----------------------------------------
+  # Prompt Service
+  # ----------------------------------------
+  prompt-service:
+    build:
+      context: ./services/prompt-service
+      dockerfile: Dockerfile
+    container_name: dfa_prompt_service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    volumes:
+      - ./services/prompt-service:/app
+      - ./prompts:/app/prompts
+
+  # ----------------------------------------
+  # Orchestration Service
+  # ----------------------------------------
+  orchestration-service:
+    build:
+      context: ./services/orchestration-service
+      dockerfile: Dockerfile
+    container_name: dfa_orchestration
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/douyin_fashion_ai
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ----------------------------------------
+  # Inference Router
+  # ----------------------------------------
+  inference-router:
+    build:
+      context: ./services/inference-router
+      dockerfile: Dockerfile
+    container_name: dfa_inference_router
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  # ----------------------------------------
+  # Moderation Service
+  # ----------------------------------------
+  moderation-service:
+    build:
+      context: ./services/moderation-service
+      dockerfile: Dockerfile
+    container_name: dfa_moderation
+    restart: unless-stopped
+    ports:
+      - "8004:8004"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  # ----------------------------------------
+  # Video Worker
+  # ----------------------------------------
+  video-worker:
+    build:
+      context: ./workers/video-worker
+      dockerfile: Dockerfile
+    container_name: dfa_video_worker
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/douyin_fashion_ai
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./workers/video-worker:/app
+
+  # ----------------------------------------
+  # Preprocess Worker
+  # ----------------------------------------
+  preprocess-worker:
+    build:
+      context: ./workers/preprocess-worker
+      dockerfile: Dockerfile
+    container_name: dfa_preprocess_worker
+    restart: unless-stopped
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  # ----------------------------------------
+  # Frontend Web App (Next.js)
+  # ----------------------------------------
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: dfa_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NODE_ENV=development
+    depends_on:
+      - api-gateway
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+
+  # ----------------------------------------
+  # Volumes
+  # ----------------------------------------
+volumes:
+  postgres_data:
+  redis_data:
