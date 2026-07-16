@@ -1,0 +1,48 @@
+{
+  "name": "douyin-fashion-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-grade B2B SaaS platform for generating ultra-realistic Douyin fashion videos",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "workers/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.0",
+    "eslint": "^8.57.0",
+    "@types/node": "^20.12.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.1.0",
+  "keywords": [
+    "douyin",
+    "fashion",
+    "ai",
+    "video-generation",
+    "generative-ai",
+    "b2b-saas",
+    "china",
+    "kling",
+    "veo"
+  ],
+  "license": "MIT",
+  "author": "wang-yuhao"
+}
