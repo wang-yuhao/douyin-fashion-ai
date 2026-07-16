@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Douyin Fashion AI — Demo</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🎬</span>
+        <span class="logo-text">Douyin Fashion AI</span>
+        <span class="logo-badge">MVP Demo</span>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active" onclick="showSection('generate')">Generate</button>
+        <button class="nav-btn" onclick="showSection('jobs')">My Jobs</button>
+        <button class="nav-btn" onclick="showSection('api')">API Docs</button>
+      </nav>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="langEn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" id="langZh" onclick="setLang('zh')">中文</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Generate Section -->
+    <section id="section-generate" class="section active">
+      <div class="section-header">
+        <h1 class="section-title" data-en="Generate Fashion Video" data-zh="生成时尚视频">Generate Fashion Video</h1>
+        <p class="section-subtitle" data-en="Upload a garment, choose a template, and generate a Douyin-ready video in minutes." data-zh="上传服装图片，选择模板，几分钟内生成抖音竖屏视频。">Upload a garment, choose a template, and generate a Douyin-ready video in minutes.</p>
+      </div>
+
+      <div class="workflow">
+
+        <!-- Step 1: Upload -->
+        <div class="card" id="step-upload">
+          <div class="card-step">01</div>
+          <h2 class="card-title" data-en="Upload Garment" data-zh="上传服装图片">Upload Garment</h2>
+          <p class="card-desc" data-en="Upload front, back or detail shots. JPEG/PNG/WebP, max 20MB." data-zh="上传服装正面、背面或细节图。支持JPEG/PNG/WebP，最大20MB。">Upload front, back or detail shots. JPEG/PNG/WebP, max 20MB.</p>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📸</div>
+            <div class="upload-text" data-en="Click to upload or drag &amp; drop" data-zh="点击上传或拖拽图片">Click to upload or drag &amp; drop</div>
+            <div class="upload-hint" data-en="Garment image — front / back / detail" data-zh="服装图片 — 正面 / 背面 / 细节">Garment image — front / back / detail</div>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleUpload(event)" />
+          </div>
+          <div id="uploadStatus" class="status-msg" style="display:none"></div>
+          <div id="uploadPreview" style="display:none" class="upload-preview">
+            <img id="previewImg" src="" alt="Garment preview" />
+            <div class="preview-info">
+              <div id="previewFilename" class="preview-name"></div>
+              <div id="previewSize" class="preview-meta"></div>
+              <div class="badge badge-success" data-en="✓ Uploaded" data-zh="✓ 已上传">✓ Uploaded</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Template -->
+        <div class="card" id="step-template">
+          <div class="card-step">02</div>
+          <h2 class="card-title" data-en="Choose Template" data-zh="选择视频模板">Choose Template</h2>
+          <div class="template-grid" id="templateGrid">Loading templates...</div>
+        </div>
+
+        <!-- Step 3: Prompt -->
+        <div class="card" id="step-prompt">
+          <div class="card-step">03</div>
+          <h2 class="card-title" data-en="Describe Your Vision" data-zh="描述你的创意">Describe Your Vision</h2>
+          <p class="card-desc" data-en="Optional — write in Chinese or English. Leave blank for auto-generated prompt." data-zh="可选 — 用中文或英文描述，留空则自动生成提示词。">Optional — write in Chinese or English. Leave blank for auto-generated prompt.</p>
+          <textarea id="promptInput" class="prompt-textarea" rows="3" placeholder="e.g. 夏季清新连衣裙，海边走秀... or Breezy summer dress on a sun-drenched beach..."></textarea>
+          <button class="btn btn-secondary" onclick="enhancePrompt()" id="enhanceBtn">
+            <span data-en="✨ Auto-Enhance Prompt" data-zh="✨ 智能优化提示词">✨ Auto-Enhance Prompt</span>
+          </button>
+          <div id="enhancedPromptBox" style="display:none" class="enhanced-prompt">
+            <div class="enhanced-label" data-en="Enhanced prompt:" data-zh="优化后的提示词：">Enhanced prompt:</div>
+            <div id="enhancedText" class="enhanced-text"></div>
+          </div>
+        </div>
+
+        <!-- Step 4: Settings -->
+        <div class="card" id="step-settings">
+          <div class="card-step">04</div>
+          <h2 class="card-title" data-en="Model & Route" data-zh="模型与生成路线">Model &amp; Route</h2>
+
+          <div class="settings-row">
+            <label class="settings-label" data-en="AI Model Persona" data-zh="AI模特形象">AI Model Persona</label>
+            <select id="personaSelect" class="select-input">
+              <option value="east_asian" data-en="East Asian — Natural" data-zh="东亚模特 — 自然妆容">East Asian — Natural</option>
+              <option value="international" data-en="International — Diverse" data-zh="国际模特 — 多元形象">International — Diverse</option>
+              <option value="luxury_editorial" data-en="Luxury Editorial" data-zh="高端杂志风">Luxury Editorial</option>
+              <option value="casual_commercial" data-en="Casual Commercial" data-zh="亲和商业风">Casual Commercial</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <label class="settings-label" data-en="Inference Route" data-zh="生成路线">Inference Route</label>
+            <div class="route-cards">
+              <div class="route-card" data-route="economy" onclick="selectRoute('economy')">
+                <div class="route-name">Economy</div>
+                <div class="route-cost">~$1.50 / video</div>
+                <div class="route-time">5–10s mock</div>
+              </div>
+              <div class="route-card selected" data-route="standard" onclick="selectRoute('standard')">
+                <div class="route-name">Standard ✓</div>
+                <div class="route-cost">~$4.50 / video</div>
+                <div class="route-time">8–15s mock</div>
+              </div>
+              <div class="route-card" data-route="premium" onclick="selectRoute('premium')">
+                <div class="route-name">Premium</div>
+                <div class="route-cost">~$15.00 / video</div>
+                <div class="route-time">12–20s mock</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <label class="settings-label" data-en="Duration (seconds)" data-zh="视频时长（秒）">Duration (seconds)</label>
+            <input type="range" id="durationSlider" min="4" max="30" value="8" oninput="document.getElementById('durationVal').textContent=this.value" class="range-input" />
+            <span id="durationVal" class="range-val">8</span><span class="range-unit">s</span>
+          </div>
+        </div>
+
+        <!-- Step 5: Generate -->
+        <div class="card generate-card" id="step-generate">
+          <div class="card-step">05</div>
+          <h2 class="card-title" data-en="Generate Video" data-zh="生成视频">Generate Video</h2>
+          <button class="btn btn-primary btn-large" onclick="submitJob()" id="generateBtn">
+            <span data-en="🎬 Generate Douyin Video" data-zh="🎬 生成抖音视频">🎬 Generate Douyin Video</span>
+          </button>
+          <p class="generate-note" data-en="Demo mode — inference is simulated. No real API calls." data-zh="演示模式 — 推理为模拟。不会调用真实API。">Demo mode — inference is simulated. No real API calls.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Jobs Section -->
+    <section id="section-jobs" class="section">
+      <div class="section-header">
+        <h1 class="section-title" data-en="My Jobs" data-zh="我的任务">My Jobs</h1>
+        <button class="btn btn-secondary" onclick="refreshJobs()">🔄 <span data-en="Refresh" data-zh="刷新">Refresh</span></button>
+      </div>
+      <div id="jobsList" class="jobs-list">No jobs yet. Generate your first video!</div>
+    </section>
+
+    <!-- API Section -->
+    <section id="section-api" class="section">
+      <div class="section-header">
+        <h1 class="section-title">API Reference</h1>
+        <a class="btn btn-secondary" href="/docs" target="_blank">📖 Interactive Swagger UI</a>
+      </div>
+      <div class="api-table-wrapper">
+        <table class="api-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/jobs</code></td><td>Submit a generation job</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/jobs/{job_id}</code></td><td>Poll job status</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/jobs</code></td><td>List all jobs</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/prompts/enhance</code></td><td>Enhance a user prompt</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/assets/upload</code></td><td>Upload garment image</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/templates</code></td><td>List video templates</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/health</code></td><td>Health check</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Example: Submit a Job</h3>
+        <pre class="code-block">curl -X POST http://localhost:8000/api/jobs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asset_id": "your-asset-uuid",
+    "template": "studio_luxury",
+    "prompt": "展示高端连衣裙",
+    "persona": "east_asian",
+    "route": "standard",
+    "duration_seconds": 8
+  }'</pre>
+      </div>
+      <div class="card">
+        <h3>Example: Enhance a Prompt</h3>
+        <pre class="code-block">curl -X POST http://localhost:8000/api/prompts/enhance \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "夏季连衣裙",
+    "template": "outdoor_cinematic",
+    "persona": "luxury_editorial",
+    "language": "zh-CN"
+  }'</pre>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Job Progress Modal -->
+  <div id="jobModal" class="modal" style="display:none">
+    <div class="modal-backdrop" onclick="closeModal()"></div>
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
